@@ -19,7 +19,7 @@ jobs:
           python-version: "3.x"
 
       - name: Install dependencies
-        run: pip install -r requirements.txt pyinstaller
+        run: pip install -r requirements.txt
 
       - name: Build executable
         run: pyinstaller --onefile youtubeDownloader.py
@@ -28,3 +28,11 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: dist/youtubeDownloader.exe
+
+      - name: Upload Release Asset
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: dist/youtubeDownloader.exe
+          asset_name: youtubeDownloader.exe
+          tag: ${{ github.ref }}
