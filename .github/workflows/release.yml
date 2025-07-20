@@ -1,0 +1,30 @@
+name: Build and Release Executable
+
+on:
+  push:
+    tags:
+      - 'v*'     # Triggers on tags like v1.0.0
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt pyinstaller
+
+      - name: Build executable
+        run: pyinstaller --onefile youtubeDownloader.py
+
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/youtubeDownloader.exe
