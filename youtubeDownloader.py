@@ -33,48 +33,50 @@ def get_output_file(base_dir, base_name):
             return os.path.join(base_dir, f)
     return None
 
+def download_video(url):
+    download_dir = get_download_path()
+    timestamp = datetime.now().strftime("%H%M%S")
+
+    # Get video metadata
+    with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
+        info = ydl.extract_info(url, download=False)
+        title = sanitize_filename(info.get("title", "video"), restricted=True)
+
+    output_base = f"{title}_{timestamp}"
+    output_template = os.path.join(download_dir, output_base + ".%(ext)s")
+
+    ydl_opts = {
+        'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+        'outtmpl': {'default': output_template},
+        'merge_output_format': 'mp4',
+        'quiet': False,  # Show progress and info
+    }
+
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
+    except Exception as e:
+        print(f"❌ Error during download: {e}")
+        return
+
+    final_path = get_output_file(download_dir, output_base)
+    if final_path:
+        print(f"\n✅ Download complete:\n{final_path}")
+    else:
+        print("\n❌ Merge or download failed. Check above messages and your output folder.")
+
 def main():
     check_ffmpeg()
-    try:
-        url = input("🔗 Enter YouTube URL: ").strip()
-        if not url:
-            print("No URL provided.")
-            sys.exit(1)
-        download_dir = get_download_path()
-        timestamp = datetime.now().strftime("%H%M%S")
-
-        # Get video metadata
-        with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
-            info = ydl.extract_info(url, download=False)
-            title = sanitize_filename(info.get("title", "video"), restricted=True)
-
-        output_base = f"{title}_{timestamp}"
-        output_template = os.path.join(download_dir, output_base + ".%(ext)s")
-
-        ydl_opts = {
-            'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-            'outtmpl': {'default': output_template},
-            'merge_output_format': 'mp4',
-            'quiet': False,  # Show progress and info
-        }
-
-        # Download the video
+    while True:
         try:
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                ydl.download([url])
-        except Exception as e:
-            print(f"❌ Error during download: {e}")
-            sys.exit(1)
-
-        final_path = get_output_file(download_dir, output_base)
-        if final_path:
-            print(f"\n✅ Download complete:\n{final_path}")
-        else:
-            print("\n❌ Merge or download failed. Check above messages and your output folder.")
-
-    except Exception as e:
-        print(f"❌ Unexpected error: {e}")
-        sys.exit(1)
+            url = input("\n🔗 Enter YouTube URL (leave blank to exit): ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print("\nExiting...")
+            break
+        if not url:
+            print("Done. Goodbye!")
+            break
+        download_video(url)
 
 if __name__ == "__main__":
     main()
